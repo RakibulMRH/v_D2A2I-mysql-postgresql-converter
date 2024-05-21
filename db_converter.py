@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Fixes a MySQL dump made with the right format so it can be directly
@@ -12,7 +12,6 @@ import re
 import sys
 import os
 import time
-import subprocess
 
 
 def parse(input_filename, output_filename):
@@ -22,7 +21,8 @@ def parse(input_filename, output_filename):
     if input_filename == "-":
         num_lines = -1
     else:
-        num_lines = int(subprocess.check_output(["wc", "-l", input_filename]).strip().split()[0])
+        with open(input_filename, 'r') as file:
+            num_lines = sum(1 for line in file)
     tables = {}
     current_table = None
     creation_lines = []
@@ -48,7 +48,6 @@ def parse(input_filename, output_filename):
     else:
         input_fh = open(input_filename)
 
-
     output.write("-- Converted by db_converter\n")
     output.write("START TRANSACTION;\n")
     output.write("SET standard_conforming_strings=off;\n")
@@ -69,7 +68,15 @@ def parse(input_filename, output_filename):
             secs_left % 60,
         ))
         logging.flush()
-        line = line.decode("utf8").strip().replace(r"\\", "WUBWUBREALSLASHWUB").replace(r"\'", "''").replace("WUBWUBREALSLASHWUB", r"\\")
+        line = line.strip().replace(r"\\", "WUBWUBREALSLASHWUB").replace(r"\'", "''").replace("WUBWUBREALSLASHWUB", r"\\")
+        line = line.replace('current_timestamp()', 'CURRENT_TIMESTAMP')  # Adding MySQL 5.5 -> PostgreSQL 9.1 compatibility current_timestamp()
+        line = line.replace("'0000-00-00 00:00:00'", "'0001-01-01 00:00:00'") 
+
+        if re.search(r'\bDOUBLE\s*\(\s*\d+\s*,\s*\d+\s*\)', line, flags=re.IGNORECASE):
+            line = re.sub(r'\bDOUBLE\s*\(\s*\d+\s*,\s*\d+\s*\)', 'double precision', line, flags=re.IGNORECASE)
+        else:
+            line = re.sub(r'\bDOUBLE\b', 'double precision', line, flags=re.IGNORECASE)
+        
         # Ignore comment lines
         if line.startswith("--") or line.startswith("/*") or line.startswith("LOCK TABLES") or line.startswith("DROP TABLE") or line.startswith("UNLOCK TABLES") or not line:
             continue
@@ -83,11 +90,11 @@ def parse(input_filename, output_filename):
                 creation_lines = []
             # Inserting data into a table?
             elif line.startswith("INSERT INTO"):
-                output.write(line.encode("utf8").replace("'0000-00-00 00:00:00'", "NULL") + "\n")
+                output.write(line.replace("'0000-00-00 00:00:00'", "'0001-01-01 00:00:00'") + "\n")
                 num_inserts += 1
             # ???
             else:
-                print "\n ! Unknown line in main body: %s" % line
+                print("\n ! Unknown line in main body: %s" % line)
 
         # Inside-create-statement handling
         else:
@@ -104,8 +111,8 @@ def parse(input_filename, output_filename):
                 except ValueError:
                     type = definition.strip()
                     extra = ""
-                extra = re.sub("CHARACTER SET [\w\d]+\s*", "", extra.replace("unsigned", ""))
-                extra = re.sub("COLLATE [\w\d]+\s*", "", extra.replace("unsigned", ""))
+                extra = re.sub(r"CHARACTER SET [\w\d]+\s*", "", extra.replace("unsigned", ""))
+                extra = re.sub(r"COLLATE [\w\d]+\s*", "", extra.replace("unsigned", ""))
 
                 # See if it needs type conversion
                 final_type = None
@@ -125,7 +132,7 @@ def parse(input_filename, output_filename):
                 elif type == "mediumtext":
                     type = "text"
                 elif type == "tinytext":
-                    type = "text"
+                    type = "text" 
                 elif type.startswith("varchar("):
                     size = int(type.split("(")[1].rstrip(")"))
                     type = "varchar(%s)" % (size * 2)
@@ -133,9 +140,7 @@ def parse(input_filename, output_filename):
                     type = "int2"
                     set_sequence = True
                 elif type == "datetime":
-                    type = "timestamp with time zone"
-                elif type == "double":
-                    type = "double precision"
+                    type = "timestamp with time zone" 
                 elif type.endswith("blob"):
                     type = "bytea"
                 elif type.startswith("enum(") or type.startswith("set("):
@@ -148,7 +153,7 @@ def parse(input_filename, output_filename):
                     enum_name = "{0}_{1}".format(current_table, name)
 
                     if enum_name not in enum_types:
-                        output.write("CREATE TYPE {0} AS ENUM ({1}); \n".format(enum_name, types_str));
+                        output.write("CREATE TYPE {0} AS ENUM ({1}); \n".format(enum_name, types_str))
                         enum_types.append(enum_name)
 
                     type = enum_name
@@ -158,7 +163,7 @@ def parse(input_filename, output_filename):
                 # ID fields need sequences [if they are integers?]
                 if name == "id" and set_sequence is True:
                     sequence_lines.append("CREATE SEQUENCE %s_id_seq" % (current_table))
-                    sequence_lines.append("SELECT setval('%s_id_seq', max(id)) FROM %s" % (current_table, current_table))
+                    sequence_lines.append("SELECT setval('%s_id_seq', (SELECT max(id) FROM %s))" % (current_table, current_table))
                     sequence_lines.append("ALTER TABLE \"%s\" ALTER COLUMN \"id\" SET DEFAULT nextval('%s_id_seq')" % (current_table, current_table))
                 # Record it
                 creation_lines.append('"%s" %s %s' % (name, type, extra))
@@ -187,7 +192,7 @@ def parse(input_filename, output_filename):
                 current_table = None
             # ???
             else:
-                print "\n ! Unknown line inside table creation: %s" % line
+                print("\n ! Unknown line inside table creation: %s" % line)
 
 
     # Finish file
@@ -210,7 +215,7 @@ def parse(input_filename, output_filename):
     for line in sequence_lines:
         output.write("%s;\n" % line)
 
-    # Write full-text indexkeyses out
+    # Write full-text keys out
     output.write("\n-- Full Text keys --\n")
     for line in fulltext_key_lines:
         output.write("%s;\n" % line)
@@ -218,8 +223,33 @@ def parse(input_filename, output_filename):
     # Finish file
     output.write("\n")
     output.write("COMMIT;\n")
-    print ""
+    print("")
+
+def convert_stored_procedures(input_filename, output_filename):
+    # Read input file
+    with open(input_filename, 'r') as file:
+        input_text = file.read()
+
+    # Regular expression to match MySQL stored procedure definition
+    pattern = r'DELIMITER ;;\s*CREATE\s+PROCEDURE\s+`(.*?)`\s*\((.*?)\)\s*(.*?)END\s*;;\s*DELIMITER ;'
+    # Extract stored procedure name, parameters, and body
+    matches = re.findall(pattern, input_text, re.DOTALL)
+
+    # Open output file and write converted stored procedures
+    with open(output_filename, 'a') as output:
+        # Iterate over matches and convert each stored procedure
+        for match in matches:
+            procedure_name, parameters, body = match
+            # Perform conversion from MySQL to PostgreSQL syntax
+            # Modify body as needed
+            body = body.strip().replace('`', '"')
+            output.write(f"CREATE OR REPLACE FUNCTION {procedure_name}({parameters}) RETURNS VOID AS $$\n")
+            output.write(body)
+            output.write("$$ LANGUAGE plpgsql;\n")
 
 
 if __name__ == "__main__":
-    parse(sys.argv[1], sys.argv[2])
+    input_filename = sys.argv[1]
+    output_filename = sys.argv[2]
+    parse(input_filename, output_filename)
+    convert_stored_procedures(input_filename, output_filename)
