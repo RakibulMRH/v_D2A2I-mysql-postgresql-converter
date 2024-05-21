@@ -225,31 +225,5 @@ def parse(input_filename, output_filename):
     output.write("COMMIT;\n")
     print("")
 
-def convert_stored_procedures(input_filename, output_filename):
-    # Read input file
-    with open(input_filename, 'r') as file:
-        input_text = file.read()
-
-    # Regular expression to match MySQL stored procedure definition
-    pattern = r'DELIMITER ;;\s*CREATE\s+PROCEDURE\s+`(.*?)`\s*\((.*?)\)\s*(.*?)END\s*;;\s*DELIMITER ;'
-    # Extract stored procedure name, parameters, and body
-    matches = re.findall(pattern, input_text, re.DOTALL)
-
-    # Open output file and write converted stored procedures
-    with open(output_filename, 'a') as output:
-        # Iterate over matches and convert each stored procedure
-        for match in matches:
-            procedure_name, parameters, body = match
-            # Perform conversion from MySQL to PostgreSQL syntax
-            # Modify body as needed
-            body = body.strip().replace('`', '"')
-            output.write(f"CREATE OR REPLACE FUNCTION {procedure_name}({parameters}) RETURNS VOID AS $$\n")
-            output.write(body)
-            output.write("$$ LANGUAGE plpgsql;\n")
-
-
 if __name__ == "__main__":
-    input_filename = sys.argv[1]
-    output_filename = sys.argv[2]
-    parse(input_filename, output_filename)
-    convert_stored_procedures(input_filename, output_filename)
+    parse(sys.argv[1], sys.argv[2])
