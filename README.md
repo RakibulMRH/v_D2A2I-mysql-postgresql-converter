@@ -5,7 +5,7 @@ Updated Lanyrd's MySQL to PostgreSQL conversion script:
 
 Minor Bug fixes for Python 3.12.3+ versions 
 
-4 new table creation format support is added
+Added 4 new table creation format support for the converter
 
 Major changes in Sequence format convertions
 
