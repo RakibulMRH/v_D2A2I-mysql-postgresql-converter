@@ -1,7 +1,7 @@
 MySQL to PostgreSQL Converter
 ============================= 
 
-RakibulMRH's additions to Lanyrd's MySQL to PostgreSQL conversion script. Use with care.
+RakibulMRH's additions to Lanyrd's MySQL to PostgreSQL conversion script:
 
 Minor Bug fixes for Python 3.12.3+ versions 
 
