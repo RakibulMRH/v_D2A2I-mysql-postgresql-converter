@@ -12,7 +12,7 @@ import re
 import sys
 import os
 import time
- 
+
 def parse(input_filename, output_filename):
     "Feed it a file, and it'll output a fixed one"
     output_file_counter = 0
@@ -196,15 +196,13 @@ def parse(input_filename, output_filename):
                 print("\n ! Unknown line inside table creation: %s" % line)
             
         output.flush()  # Make sure all data is written
-        if os.path.getsize(output.name) > 1024 * 1024 * 1024:  # 1024MB
-            # If the size exceeds 1024MB, close the current output file
+        if os.path.getsize(output.name) > 500 * 1024 * 1024:  # 500 MB
+            # If the size exceeds 500 MB, close the current output file
             output.close()
             # Increment the counter
             output_file_counter += 1
             # Open a new output file with the counter in its name
             output = open(f"{output_filename}_{output_file_counter}", "w")
-
-
 
     # Finish file
     output.write("\n")
