@@ -72,6 +72,6 @@ python db_converter.py selected_tables.mysql convertedtables.psql
 ```
 
 #### Import using `import_psql.py` (change the PostgreSQL and other directories inside the code)
-```
+ 
 
 For each section, I included the one-click copy buttons to simplify copying commands. You can paste this README into your GitHub repository. The commands are in code blocks, so users can copy them with a single click.
