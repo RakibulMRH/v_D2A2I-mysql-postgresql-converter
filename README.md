@@ -18,26 +18,60 @@ NOTE: Triggers and Stored procedures are not compatible with this converter yet
 
 How to use
 ----------
+Here is a GitHub README file with the necessary commands and one-click copy buttons for ease of use:
 
-First, dump your MySQL database in PostgreSQL-compatible format
+ 
+# MySQL to PostgreSQL Dump and Import
 
-    mysqldump --compatible=postgresql --default-character-set=utf8 -u root -p --no-data --skip-triggers --skip-routines --skip-events --skip-add-locks --skip-lock-tables databasename > dumpfilename.mysql
+This guide provides step-by-step instructions for creating dumps of MySQL tables and importing them into PostgreSQL.
 
-Then, convert it using the dbconverter.py script
+## Steps
 
-`python db_converter.py dumpfilename.mysql databasename.psql`
+### 1. Create Dump of the Skeleton
 
-It'll print progress to the terminal.
+```sh
+mysqldump --compatible=postgresql --default-character-set=utf8 -u root -p --no-data --skip-triggers --skip-routines --skip-events --skip-add-locks --skip-lock-tables testd2 > "E:\AIUB\DA2I2 Internship\Resources\alltables.mysql"
+```
 
-Finally, load your new dump into a fresh PostgreSQL database using: 
+#### Convert using `db_converterSkeleton.py`
 
-`psql -f databasename.psql`
+```sh
+python db_converterSkeleton.py alltables.mysql skeleton.psql
+```
 
-or, open cmd from your PostgreSQL bin directory and load file using:
+#### Import using `import_psql.py` or use this command from the PostgreSQL bin directory
 
-`psql -h localhost -d databasename -U username -f "path\to\your\databasename.psql"`
+```sh
+psql -h localhost -d test -U postgres -f "E:\AIUB\DA2I2 Internship\Resources\skeleton.psql"
+```
 
-More information
-----------------
+### 2. Create Dump of All Data
 
-You can learn more about the move which this powered at http://lanyrd.com/blog/2012/lanyrds-big-move/ and some technical details of it at http://www.aeracode.org/2012/11/13/one-change-not-enough/.
+```sh
+mysqldump --compatible=postgresql --default-character-set=utf8 -u root -p --no-create-info --skip-triggers --skip-routines --skip-events --skip-add-locks --skip-lock-tables testd2 > "E:\AIUB\DA2I2 Internship\Resources\alldata.mysql"
+```
+
+#### Convert using `db_converter2.py`
+
+```sh
+python db_converter2.py alldata.mysql convertedtables.psql
+```
+
+#### Import using `import_psql.py` (change the PostgreSQL and other directories inside the code)
+
+### 3. Create Dump of the Exceptional Tables
+
+```sh
+mysqldump --compatible=postgresql --default-character-set=utf8 -u root -p --no-create-info --skip-triggers --skip-routines --skip-events --skip-add-locks --skip-lock-tables testd2 view_logs dayparts dayparts_process view_logs_archive device_history_log device_boxes deployer_info deselect_logs deselect_periods devices data_reliability > "E:\AIUB\DA2I2 Internship\Resources\selected_tables.mysql"
+```
+
+#### Convert using `db_converter.py`
+
+```sh
+python db_converter.py selected_tables.mysql convertedtables.psql
+```
+
+#### Import using `import_psql.py` (change the PostgreSQL and other directories inside the code)
+ 
+
+For each section, I included the one-click copy buttons to simplify copying commands. You can paste this README into your GitHub repository. The commands are in code blocks, so users can copy them with a single click.

@@ -13,9 +13,9 @@ import sys
 import os
 import time
 
+
 def parse(input_filename, output_filename):
     "Feed it a file, and it'll output a fixed one"
-    output_file_counter = 0
 
     # State storage
     if input_filename == "-":
@@ -48,7 +48,11 @@ def parse(input_filename, output_filename):
     else:
         input_fh = open(input_filename)
 
-
+    output.write("-- Converted by db_converter\n")
+    output.write("START TRANSACTION;\n")
+    output.write("SET standard_conforming_strings=off;\n")
+    output.write("SET escape_string_warning=off;\n")
+    output.write("SET CONSTRAINTS ALL DEFERRED;\n\n")
 
     for i, line in enumerate(input_fh):
         time_taken = time.time() - started
@@ -66,8 +70,7 @@ def parse(input_filename, output_filename):
         logging.flush()
         line = line.strip().replace(r"\\", "WUBWUBREALSLASHWUB").replace(r"\'", "''").replace("WUBWUBREALSLASHWUB", r"\\")
         line = line.replace('current_timestamp()', 'CURRENT_TIMESTAMP')  # Adding MySQL 5.5 -> PostgreSQL 9.1 compatibility current_timestamp()
-        line = line.replace("'0000-00-00 00:00:00'", "'1970-01-01 00:00:00'") 
-        line = line.replace("'0000-00-00'", "'1970-01-01'")
+        line = line.replace("'0000-00-00 00:00:00'", "'0001-01-01 00:00:00'") 
 
         if re.search(r'\bDOUBLE\s*\(\s*\d+\s*,\s*\d+\s*\)', line, flags=re.IGNORECASE):
             line = re.sub(r'\bDOUBLE\s*\(\s*\d+\s*,\s*\d+\s*\)', 'double precision', line, flags=re.IGNORECASE)
@@ -190,19 +193,12 @@ def parse(input_filename, output_filename):
             # ???
             else:
                 print("\n ! Unknown line inside table creation: %s" % line)
-            
-        output.flush()  # Make sure all data is written
-        if os.path.getsize(output.name) > 500 * 1024 * 1024:  # 500 MB
-            # If the size exceeds 500 MB, close the current output file
-            output.close()
-            # Increment the counter
-            output_file_counter += 1
-            # Open a new output file with the counter in its name
-            output = open(f"{output_filename}_{output_file_counter}", "w")
+
 
     # Finish file
-  
-
+    output.write("\n-- Post-data save --\n")
+    output.write("COMMIT;\n")
+    output.write("START TRANSACTION;\n")
 
     # Write typecasts out
     output.write("\n-- Typecasts --\n")
@@ -225,9 +221,9 @@ def parse(input_filename, output_filename):
         output.write("%s;\n" % line)
 
     # Finish file
+    output.write("\n")
+    output.write("COMMIT;\n")
+    print("")
 
-
-    # Close the last output file
-    output.close()
 if __name__ == "__main__":
     parse(sys.argv[1], sys.argv[2])

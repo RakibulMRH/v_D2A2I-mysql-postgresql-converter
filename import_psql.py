@@ -23,7 +23,7 @@ for index, filename in enumerate(files):
         # Construct the full file path
         filepath = os.path.join(directory, filename)
         # Construct the psql command
-        command = f'"C:\\Program Files\\PostgreSQL\\16\\bin\\psql" -h localhost -d trp-app -U postgres -f "{filepath}"'
+        command = f'"C:\\Program Files\\PostgreSQL\\16\\bin\\psql" -h localhost -d test -U postgres -f "{filepath}"'
         # Set the PGPASSWORD environment variable
         os.environ['PGPASSWORD'] = password
         # Execute the command

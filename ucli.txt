@@ -1,0 +1,34 @@
+mysqldump --compatible=postgresql --default-character-set=utf8 -u root -p --no-data --skip-triggers --skip-routines --skip-events --skip-add-locks --skip-lock-tables testd2 > "E:\AIUB\DA2I2 Internship\Resources\alltables.mysql"
+
+python db_converterSkeleton.py alltables.mysql skeleton.psql
+
+psql -h localhost -d test -U postgres -f "E:\AIUB\DA2I2 Internship\Resources\skeleton.psql"
+
+
+
+Steps:
+1.	Create Dump of the skeleton
+mysqldump --compatible=postgresql --default-character-set=utf8 -u root -p --no-data --skip-triggers --skip-routines --skip-events --skip-add-locks --skip-lock-tables testd2 > "E:\AIUB\DA2I2 Internship\Resources\alltables.mysql"
+
+•	Convert using db_converterSkeleton.py
+python db_converterSkeleton.py alltables.mysql skeleton.psql
+
+•	Import using import_psql.py (change the postgres and other directory inside code)
+OR,  use this command from the postgres bin directory
+psql -h localhost -d test -U postgres -f "E:\AIUB\DA2I2 Internship\Resources\skeleton.psql"
+
+2.	Create Dump of all data
+mysqldump --compatible=postgresql --default-character-set=utf8 -u root -p --no-create-info --skip-triggers --skip-routines --skip-events --skip-add-locks --skip-lock-tables testd2 > "E:\AIUB\DA2I2 Internship\Resources\alldata.mysql"
+
+•	Convert using db_converter2.py
+python db_converter2.py alldata.mysql convertedtables.psql
+
+•	Import using import_psql.py (change the Postgres and other directory inside code)
+
+3.	Create Dump of the exceptional tables
+mysqldump --compatible=postgresql --default-character-set=utf8 -u root -p --no-create-info --skip-triggers --skip-routines --skip-events --skip-add-locks --skip-lock-tables testd2 view_logs dayparts dayparts_process view_logs_archive device_history_log device_boxes deployer_info deselect_logs deselect_periods devices data_reliability > "E:\AIUB\DA2I2 Internship\Resources\selected_tables.mysql"
+
+•	Convert using db_converter.py
+python db_converter.py alltables.mysql convertedtables.psql
+
+•	Import using import_psql.py (change the Postgres and other directory inside code)

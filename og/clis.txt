@@ -1,0 +1,64 @@
+mysqldump --compatible=postgresql --default-character-set=utf8 -u root -p --no-data --skip-triggers --skip-routines --skip-events --skip-add-locks --skip-lock-tables testd2 > "E:\AIUB\DA2I2 Internship\Resources\alltables.mysql"
+
+mysqldump --compatible=postgresql --default-character-set=utf8 -u root -p --no-create-info --skip-triggers --skip-routines --skip-events --skip-add-locks --skip-lock-tables testd2 > "E:\AIUB\DA2I2 Internship\Resources\alldata.mysql"
+
+mrhra@DESKTOP-MPHB1PL c:\xampp
+# mysqldump --compatible=postgresql --default-character-set=utf8 -u root -p --no-create-info --skip-triggers --skip-routines --skip-events --skip-add-locks --skip-lock-tables testd2 view_logs dayparts dayparts_process view_logs_archive device_history_log device_boxes deployer_info deselect_logs deselect_periods devices data_reliability > "E:\AIUB\DA2I2 Internship\Resources\selected_tables.mysql"
+
+python db_converter.py alltables.mysql convertedtables.psql
+
+
+python db_converter.py selected_tables.mysql convertedtables.psql
+
+psql -h localhost -d final -U postgres -f "E:\AIUB\DA2I2 Internship\Resources\convertedtables.psql"
+
+python db_converter2.py alldata.mysql convertedtables.psql
+
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    -- Disable triggers to avoid issues with foreign key constraints
+    EXECUTE 'SET session_replication_role = replica';
+
+    -- Loop through all tables and generate truncate command
+    FOR r IN (SELECT table_schema, table_name 
+              FROM information_schema.tables 
+              WHERE table_schema NOT IN ('pg_catalog', 'information_schema') 
+              AND table_type = 'BASE TABLE') 
+    LOOP
+        -- Generate and execute the TRUNCATE command
+        EXECUTE 'TRUNCATE TABLE ' || quote_ident(r.table_schema) || '.' || quote_ident(r.table_name) || ' CASCADE';
+    END LOOP;
+
+    -- Re-enable triggers
+    EXECUTE 'SET session_replication_role = DEFAULT';
+END $$;
+
+
+
+
+
+
+SELECT 
+    schemaname || '.' || relname AS table_name,
+    n_live_tup AS row_count
+FROM 
+    pg_stat_user_tables
+ORDER BY 
+    schemaname ASC,  -- First order by schema name to ensure correct ordering
+    relname ASC;     -- Then order by table name in ascending order
+
+
+
+SELECT 
+    TABLE_SCHEMA AS database_name,
+    TABLE_NAME AS table_name,
+    TABLE_ROWS AS row_count
+FROM 
+    information_schema.tables
+WHERE 
+    TABLE_TYPE = 'BASE TABLE'
+    AND TABLE_SCHEMA = 'testd2'  -- Specify your database name here
+ORDER BY 
+    TABLE_NAME ASC;  -- Order by table name in ascending order
