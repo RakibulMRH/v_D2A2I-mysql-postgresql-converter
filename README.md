@@ -20,7 +20,7 @@ How to use
 ----------
 Here is a GitHub README file with the necessary commands and one-click copy buttons for ease of use:
 
-```markdown
+ 
 # MySQL to PostgreSQL Dump and Import
 
 This guide provides step-by-step instructions for creating dumps of MySQL tables and importing them into PostgreSQL.
